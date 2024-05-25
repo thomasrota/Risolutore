@@ -12,24 +12,24 @@ namespace Risolutore
 {
 	public class Node
 	{
-		public int Id { get; set; }
-		public string Label { get; set; }
-		public string Color { get; set; }
+		public int Id { get; set; } // Id del router
+		public string Label { get; set; } // Nome del Router
+		public string Color { get; set; } // Se 'lime' indica che è la sorgente (per Bellman-Ford)
 	}
 
-	public class Edge
+	public class Arco
 	{
 		public int From { get; set; }
 		public int To { get; set; }
-		public string Label { get; set; }
+		public string Label { get; set; } // Peso dell'arco
 	}
 
 	public class GraphData
 	{
 		public List<Node> Nodes { get; set; }
-		public List<Edge> Edges { get; set; }
+		public List<Arco> Edges { get; set; }
 
-		public GraphData(List<Node> nodes, List<Edge> edges)
+		public GraphData(List<Node> nodes, List<Arco> edges)
 		{
 			Nodes = nodes;
 			Edges = edges;
@@ -74,6 +74,7 @@ namespace Risolutore
 						GraphData graphDataBF = DeserializeGraphData(jsBF);
 						//OutputGraphData(graphDataBF);
 						BellmanFord(graphDataBF);
+						Environment.Exit(0);
 						break;
 					case "0":
 						Environment.Exit(0);
@@ -100,6 +101,7 @@ namespace Risolutore
 				// cliccare sul pulsante "Genera"
 				driver.FindElement(By.CssSelector("input[type='submit'][value='genera']")).Click();
 			}
+			Console.Clear();
 			// attesa caricamento pagina
 			WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
 			wait.Until(driver => driver.FindElements(By.TagName("script")).Count > 1);
@@ -123,7 +125,7 @@ namespace Risolutore
 				{
 					MissingMemberHandling = MissingMemberHandling.Ignore
 				});
-				List<Edge> edges = JsonConvert.DeserializeObject<List<Edge>>(edgesJson);
+				List<Arco> edges = JsonConvert.DeserializeObject<List<Arco>>(edgesJson);
 
 				return new GraphData(nodes, edges);
 			}
@@ -163,7 +165,7 @@ namespace Risolutore
 
 				if (string.IsNullOrEmpty(edge.Label) || !int.TryParse(edge.Label, out weight))
 				{
-					Console.WriteLine($"Invalid weight for edge from {u} to {v}. Skipping this edge.");
+					Console.WriteLine($"Peso non valido per l'arco da {u} a {v}. Saltando questo arco.");
 					continue;
 				}
 
@@ -181,11 +183,11 @@ namespace Risolutore
 			foreach (var router in routers)
 			{
 				Console.WriteLine(
-					$"Link State Packet for Router {graphData.Nodes.First(n => n.Id == router.Key).Label}:");
+					$"Link State Packet per il Router {graphData.Nodes.First(n => n.Id == router.Key).Label}:");
 				foreach (var link in router.Value)
 				{
 					Console.WriteLine(
-						$"  To {graphData.Nodes.First(n => n.Id == link.Key).Label}: Cost = {link.Value}");
+						$"  To {graphData.Nodes.First(n => n.Id == link.Key).Label}: Costo = {link.Value}");
 				}
 
 				Console.WriteLine();
@@ -294,7 +296,7 @@ namespace Risolutore
 
 				if (string.IsNullOrEmpty(edge.Label) || !int.TryParse(edge.Label, out weight))
 				{
-					Console.WriteLine($"Invalid weight for edge from {u} to {v}. Skipping this edge.");
+					Console.WriteLine($"Peso non valido per l'arco da {u} a {v}. Saltando questo arco.");
 					continue;
 				}
 
@@ -370,11 +372,17 @@ namespace Risolutore
 
 		static void BellmanFord(GraphData graphData)
 		{
+			// Create a copy of the GraphData object to work with
+			GraphData graphDataCopy = new GraphData(
+				new List<Node>(graphData.Nodes),
+				new List<Arco>(graphData.Edges)
+			);
+
 			Node startNode = graphData.Nodes.FirstOrDefault(n => n.Color.Equals("lime", StringComparison.OrdinalIgnoreCase));
 
 			if (startNode == null)
 			{
-				Console.WriteLine("No node with color 'lime' found. Cannot run Bellman-Ford algorithm.");
+				Console.WriteLine("Nessuna sorgente trovata. Impossibile eseguire l'algoritmo di Bellman-Ford.");
 				return;
 			}
 
@@ -400,7 +408,7 @@ namespace Risolutore
 
 					if (string.IsNullOrEmpty(edge.Label) || !int.TryParse(edge.Label, out weight))
 					{
-						Console.WriteLine($"Invalid weight for edge from {u} to {v}. Skipping this edge.");
+						Console.WriteLine($"Peso non valido per l'arco da {u} a {v}. Saltando questo arco.");
 						continue;
 					}
 
@@ -420,7 +428,7 @@ namespace Risolutore
 
 				if (string.IsNullOrEmpty(edge.Label) || !int.TryParse(edge.Label, out weight))
 				{
-					continue; // Skip invalid weight edges
+					continue; // Salta l'arco se il peso non è valido
 				}
 
 				if (distances[u] != int.MaxValue && distances[u] + weight < distances[v])
@@ -434,23 +442,23 @@ namespace Risolutore
 			foreach (var node in graphData.Nodes)
 			{
 				string distanceLabel = distances[node.Id] == int.MaxValue ? "∞" : distances[node.Id].ToString();
-				Console.WriteLine($"Nodo {node.Label}: {distanceLabel}");
+				Console.WriteLine($"Router {node.Label}: {distanceLabel}");
 			}
 
 			Console.WriteLine("\nPredecessori:");
 			foreach (var node in graphData.Nodes)
 			{
 				var predecessorLabel = predecessors[node.Id] == -1 ? "N/A" : graphData.Nodes.First(n => n.Id == predecessors[node.Id]).Label;
-				Console.WriteLine($"Nodo {node.Label}: {predecessorLabel}");
+				Console.WriteLine($"Router {node.Label}: {predecessorLabel}");
 			}
 
-			Console.WriteLine("\nShortest Paths from the source node:");
+			Console.WriteLine("\nPercorsi più brevi dalla sorgente:");
 			foreach (var node in graphData.Nodes)
 			{
 				if (node.Id != startNodeId)
 				{
-					Console.WriteLine($"Shortest path to Nodo {node.Label}:");
-					Console.Write($"  Path: {startNode.Label}");
+					Console.WriteLine($"\nPercorso più breve per Router {node.Label}:");
+					Console.Write($"  Percorso: {startNode.Label}");
 
 					int current = node.Id;
 					while (predecessors[current] != -1)
@@ -460,7 +468,7 @@ namespace Risolutore
 					}
 
 					string distanceLabel = distances[node.Id] == int.MaxValue ? "∞" : distances[node.Id].ToString();
-					Console.WriteLine($"\n  Distance: {distanceLabel}");
+					Console.WriteLine($"\n  Distanza: {distanceLabel}");
 					Console.WriteLine();
 				}
 			}

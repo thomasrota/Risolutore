@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using OpenQA.Selenium.Support.UI;
 using OpenQA.Selenium.Edge;
 
-namespace RisoluDestinazionere
+namespace Risolutore
 {
 	public class Node
 	{
@@ -63,6 +63,7 @@ namespace RisoluDestinazionere
 						string jsDV = OpenLink(link, codiceGrafo, LSP);
 						GraphData graphDataDV = DeserializeGraphData(jsDV);
 						OutputGraphData(graphDataDV);
+						DistanceVector(graphDataDV);
 						break;
 					case "3":
 						link = "https://www.embedware.it/sistemi/grafi/bellman/";
@@ -71,7 +72,7 @@ namespace RisoluDestinazionere
 						string jsBF = OpenLink(link, codiceGrafo, LSP);
 						GraphData graphDataBF = DeserializeGraphData(jsBF);
 						OutputGraphData(graphDataBF);
-						RunBellmanFord(graphDataBF);
+						BellmanFord(graphDataBF);
 						break;
 					case "0":
 						continua = false;
@@ -148,7 +149,113 @@ namespace RisoluDestinazionere
 			Console.ReadKey();
 		}
 
-		static void RunBellmanFord(GraphData graphData)
+		static void DistanceVector(GraphData graphData)
+		{
+			Dictionary<int, Dictionary<int, int>> distances = new Dictionary<int, Dictionary<int, int>>();
+			Dictionary<int, Dictionary<int, int>> nextHops = new Dictionary<int, Dictionary<int, int>>();
+
+			foreach (var node in graphData.Nodes)
+			{
+				distances[node.Id] = new Dictionary<int, int>();
+				nextHops[node.Id] = new Dictionary<int, int>();
+
+				foreach (var targetNode in graphData.Nodes)
+				{
+					if (node.Id == targetNode.Id)
+					{
+						distances[node.Id][targetNode.Id] = 0;
+					}
+					else
+					{
+						distances[node.Id][targetNode.Id] = int.MaxValue;
+					}
+					nextHops[node.Id][targetNode.Id] = -1;
+				}
+			}
+
+			foreach (var edge in graphData.Edges)
+			{
+				int u = edge.From;
+				int v = edge.To;
+				int weight;
+
+				if (string.IsNullOrEmpty(edge.Label) || !int.TryParse(edge.Label, out weight))
+				{
+					Console.WriteLine($"Invalid weight for edge from {u} to {v}. Skipping this edge.");
+					continue;
+				}
+
+				distances[u][v] = weight;
+				nextHops[u][v] = v;
+
+				// Assuming the graph is undirected
+				distances[v][u] = weight;
+				nextHops[v][u] = u;
+			}
+
+			bool changed;
+			do
+			{
+				changed = false;
+				foreach (var node in graphData.Nodes)
+				{
+					foreach (var edge in graphData.Edges)
+					{
+						int u = edge.From;
+						int v = edge.To;
+						int weight;
+
+						if (string.IsNullOrEmpty(edge.Label) || !int.TryParse(edge.Label, out weight))
+						{
+							continue;
+						}
+
+						foreach (var targetNode in graphData.Nodes)
+						{
+							if (distances[u][targetNode.Id] > distances[v][targetNode.Id] + weight)
+							{
+								distances[u][targetNode.Id] = distances[v][targetNode.Id] + weight;
+								nextHops[u][targetNode.Id] = v;
+								changed = true;
+							}
+
+							if (distances[v][targetNode.Id] > distances[u][targetNode.Id] + weight)
+							{
+								distances[v][targetNode.Id] = distances[u][targetNode.Id] + weight;
+								nextHops[v][targetNode.Id] = u;
+								changed = true;
+							}
+						}
+					}
+				}
+			} while (changed);
+
+			Console.WriteLine("\nDistanze:");
+			foreach (var node in graphData.Nodes)
+			{
+				Console.WriteLine($"Nodo {node.Label}:");
+				foreach (var targetNode in graphData.Nodes)
+				{
+					string distanceLabel = distances[node.Id][targetNode.Id] == int.MaxValue ? "∞" : distances[node.Id][targetNode.Id].ToString();
+					Console.WriteLine($"  Verso {targetNode.Label}: {distanceLabel}");
+				}
+			}
+
+			Console.WriteLine("\nProssimi Hop:");
+			foreach (var node in graphData.Nodes)
+			{
+				Console.WriteLine($"Nodo {node.Label}:");
+				foreach (var targetNode in graphData.Nodes)
+				{
+					string nextHopLabel = nextHops[node.Id][targetNode.Id] == -1 ? "N/A" : graphData.Nodes.First(n => n.Id == nextHops[node.Id][targetNode.Id]).Label;
+					Console.WriteLine($"  Verso {targetNode.Label}: {nextHopLabel}");
+				}
+			}
+
+			Console.ReadKey();
+		}
+
+		static void BellmanFord(GraphData graphData)
 		{
 			Node startNode = graphData.Nodes.FirstOrDefault(n => n.Color.Equals("lime", StringComparison.OrdinalIgnoreCase));
 
@@ -213,7 +320,8 @@ namespace RisoluDestinazionere
 			Console.WriteLine("\nDistanze dal nodo di partenza:");
 			foreach (var node in graphData.Nodes)
 			{
-				Console.WriteLine($"Nodo {node.Label}: {distances[node.Id]}");
+				string distanceLabel = distances[node.Id] == int.MaxValue ? "∞" : distances[node.Id].ToString();
+				Console.WriteLine($"Nodo {node.Label}: {distanceLabel}");
 			}
 
 			Console.WriteLine("\nPredecessori:");

@@ -41,8 +41,10 @@ namespace Risolutore
 		static void Main(string[] args)
 		{
 			bool continua = true;
-			string link, codiceGrafo;
+			string link, codiceGrafo, jsLSP, jsDV, jsBF;
 			bool LSP = false;
+			bool? generateNew;
+			GraphData graphDataLSP, graphDataDV, graphDataBF;
 			do
 			{
 				Console.Write("Tipologia esercizio da risolvere\n1 - Link State Protocol\n2 - Distance Vector\n3 - Bellman-Ford\n0 - Esci\n\nScelta: ");
@@ -52,29 +54,61 @@ namespace Risolutore
 						LSP = true;
 						link = "https://www.embedware.it/sistemi/grafi/LSP/";
 						codiceGrafo = null;
-						string jsLSP = OpenLink(link, codiceGrafo, LSP);
-						GraphData graphDataLSP = DeserializeGraphData(jsLSP);
+						generateNew = true;
+						jsLSP = OpenLink(link, codiceGrafo, LSP, generateNew);
+						graphDataLSP = DeserializeGraphData(jsLSP);
 						//OutputGraphData(graphDataLSP);
 						LinkStateProtocol(graphDataLSP);
 						break;
 					case "2":
 						link = "https://www.embedware.it/sistemi/grafi/DV/";
+						do
+						{
+							Console.Write("Generare un nuovo grafo? (s/n): ");
+							string input = Console.ReadLine().ToLower();
+							if(input == "s")
+								generateNew = true;
+							else if(input == "n")
+								generateNew = false;
+							else
+								generateNew = null;
+						} while (generateNew == null);
 						Console.Write("Inserisci codice grafo: ");
 						codiceGrafo = Console.ReadLine();
-						string jsDV = OpenLink(link, codiceGrafo, LSP);
-						GraphData graphDataDV = DeserializeGraphData(jsDV);
+						jsDV = OpenLink(link, codiceGrafo, LSP, generateNew);
+						graphDataDV = DeserializeGraphData(jsDV);
 						//OutputGraphData(graphDataDV);
 						DistanceVector(graphDataDV);
 						break;
 					case "3":
 						link = "https://www.embedware.it/sistemi/grafi/bellman/";
-						Console.Write("Inserisci codice grafo: ");
-						codiceGrafo = Console.ReadLine();
-						string jsBF = OpenLink(link, codiceGrafo, LSP);
-						GraphData graphDataBF = DeserializeGraphData(jsBF);
-						//OutputGraphData(graphDataBF);
-						BellmanFord(graphDataBF);
-						Environment.Exit(0);
+						do
+						{
+							Console.Write("Generare un nuovo grafo? (s/n): ");
+							string input = Console.ReadLine().ToLower();
+							if (input == "s")
+							{
+								generateNew = true;
+								codiceGrafo = null;
+								jsBF = OpenLink(link, codiceGrafo, LSP, generateNew);
+								graphDataBF = DeserializeGraphData(jsBF);
+								//OutputGraphData(graphDataBF);
+								BellmanFord(graphDataBF);
+							}
+							else if (input == "n")
+							{
+								generateNew = false;
+								Console.Write("Inserisci codice grafo: ");
+								codiceGrafo = Console.ReadLine();
+								jsBF = OpenLink(link, codiceGrafo, LSP, generateNew);
+								graphDataBF = DeserializeGraphData(jsBF);
+								//OutputGraphData(graphDataBF);
+								BellmanFord(graphDataBF);
+							}
+							else
+								generateNew = null;
+						} while (generateNew == null);
+						
 						break;
 					case "0":
 						Environment.Exit(0);
@@ -89,7 +123,7 @@ namespace Risolutore
 			while (continua);
 		}
 
-		static string OpenLink(string l, string cG, bool isLSP)
+		static string OpenLink(string l, string cG, bool isLSP, bool? newGraph)
 		{
 			var driver = new OpenQA.Selenium.Edge.EdgeDriver();
 			IWebElement scriptElement;
@@ -101,6 +135,9 @@ namespace Risolutore
 				// cliccare sul pulsante "Genera"
 				driver.FindElement(By.CssSelector("input[type='submit'][value='genera']")).Click();
 			}
+			if(newGraph == true)
+				// cliccare sul pulsante "Genera"
+				driver.FindElement(By.CssSelector("input[type='submit'][value='genera']")).Click();
 			Console.Clear();
 			// attesa caricamento pagina
 			WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));

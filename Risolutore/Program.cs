@@ -54,7 +54,8 @@ namespace Risolutore
 						codiceGrafo = null;
 						string jsLSP = OpenLink(link, codiceGrafo, LSP);
 						GraphData graphDataLSP = DeserializeGraphData(jsLSP);
-						OutputGraphData(graphDataLSP);
+						//OutputGraphData(graphDataLSP);
+						LinkStateProtocol(graphDataLSP);
 						break;
 					case "2":
 						link = "https://www.embedware.it/sistemi/grafi/DV/";
@@ -75,6 +76,7 @@ namespace Risolutore
 						BellmanFord(graphDataBF);
 						break;
 					case "0":
+						Environment.Exit(0);
 						continua = false;
 						break;
 					default:
@@ -84,7 +86,6 @@ namespace Risolutore
 				Console.Clear();
 			}
 			while (continua);
-			Environment.Exit(0);
 		}
 
 		static string OpenLink(string l, string cG, bool isLSP)
@@ -147,6 +148,116 @@ namespace Risolutore
 				var toNode = graphData.Nodes.First(n => n.Id == edge.To);
 				Console.WriteLine($"From: {fromNode.Label}, To: {toNode.Label}, Label: {edge.Label}");
 			}
+			Console.ReadKey();
+		}
+		static void LinkStateProtocol(GraphData graphData)
+		{
+			var routers = graphData.Nodes.ToDictionary(n => n.Id, n => new Dictionary<int, int>());
+			var lsps = new Dictionary<int, Dictionary<int, int>>();
+
+			foreach (var edge in graphData.Edges)
+			{
+				int u = edge.From;
+				int v = edge.To;
+				int weight;
+
+				if (string.IsNullOrEmpty(edge.Label) || !int.TryParse(edge.Label, out weight))
+				{
+					Console.WriteLine($"Invalid weight for edge from {u} to {v}. Skipping this edge.");
+					continue;
+				}
+
+				if (!routers[u].ContainsKey(v))
+				{
+					routers[u][v] = weight;
+				}
+
+				if (!routers[v].ContainsKey(u))
+				{
+					routers[v][u] = weight;
+				}
+			}
+
+			foreach (var router in routers)
+			{
+				Console.WriteLine(
+					$"Link State Packet for Router {graphData.Nodes.First(n => n.Id == router.Key).Label}:");
+				foreach (var link in router.Value)
+				{
+					Console.WriteLine(
+						$"  To {graphData.Nodes.First(n => n.Id == link.Key).Label}: Cost = {link.Value}");
+				}
+
+				Console.WriteLine();
+			}
+
+			foreach (var router in routers)
+			{
+				lsps[router.Key] = new Dictionary<int, int>(router.Value);
+			}
+
+			var distanceTable = new int[graphData.Nodes.Count, graphData.Nodes.Count];
+			for (int i = 0; i < graphData.Nodes.Count; i++)
+			{
+				for (int j = 0; j < graphData.Nodes.Count; j++)
+				{
+					if (i == j)
+					{
+						distanceTable[i, j] = 0;
+					}
+					else if (lsps.ContainsKey(i) && lsps[i].ContainsKey(j))
+					{
+						distanceTable[i, j] = lsps[i][j];
+					}
+					else
+					{
+						distanceTable[i, j] = int.MaxValue;
+					}
+				}
+			}
+
+			for (int k = 0; k < graphData.Nodes.Count; k++)
+			{
+				for (int i = 0; i < graphData.Nodes.Count; i++)
+				{
+					for (int j = 0; j < graphData.Nodes.Count; j++)
+					{
+						if (distanceTable[i, k] != int.MaxValue && distanceTable[k, j] != int.MaxValue &&
+							distanceTable[i, k] + distanceTable[k, j] < distanceTable[i, j])
+						{
+							distanceTable[i, j] = distanceTable[i, k] + distanceTable[k, j];
+						}
+					}
+				}
+			}
+
+			var nodeLabels = graphData.Nodes.Select(n => n.Label).ToArray();
+			Console.Write("\t");
+			foreach (var label in nodeLabels)
+			{
+				Console.Write(label + "\t");
+			}
+
+			Console.WriteLine();
+
+			for (int i = 0; i < graphData.Nodes.Count; i++)
+			{
+				Console.Write(nodeLabels[i] + "\t");
+				for (int j = 0; j < graphData.Nodes.Count; j++)
+				{
+					if (distanceTable[i, j] == int.MaxValue)
+					{
+						Console.Write("\t");
+					}
+					else
+					{
+						Console.Write(distanceTable[i, j] + "\t");
+					}
+				}
+
+				Console.WriteLine();
+			}
+
 			Console.ReadKey();
 		}
 
@@ -331,6 +442,27 @@ namespace Risolutore
 			{
 				var predecessorLabel = predecessors[node.Id] == -1 ? "N/A" : graphData.Nodes.First(n => n.Id == predecessors[node.Id]).Label;
 				Console.WriteLine($"Nodo {node.Label}: {predecessorLabel}");
+			}
+
+			Console.WriteLine("\nShortest Paths from the source node:");
+			foreach (var node in graphData.Nodes)
+			{
+				if (node.Id != startNodeId)
+				{
+					Console.WriteLine($"Shortest path to Nodo {node.Label}:");
+					Console.Write($"  Path: {startNode.Label}");
+
+					int current = node.Id;
+					while (predecessors[current] != -1)
+					{
+						Console.Write($" -> {graphData.Nodes.First(n => n.Id == predecessors[current]).Label}");
+						current = predecessors[current];
+					}
+
+					string distanceLabel = distances[node.Id] == int.MaxValue ? "∞" : distances[node.Id].ToString();
+					Console.WriteLine($"\n  Distance: {distanceLabel}");
+					Console.WriteLine();
+				}
 			}
 
 			Console.ReadKey();

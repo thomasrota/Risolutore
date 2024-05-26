@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using OpenQA.Selenium;
 using System.Threading;
 using Newtonsoft.Json;
+using OpenQA.Selenium.DevTools.V123.Accessibility;
 using OpenQA.Selenium.Support.UI;
 using OpenQA.Selenium.Edge;
 
@@ -41,10 +42,10 @@ namespace Risolutore
 		static void Main(string[] args)
 		{
 			bool continua = true;
-			string link, codiceGrafo, jsLSP, jsDV, jsBF;
+			string link, codiceGrafo, js;
 			bool LSP = false;
 			bool? generateNew;
-			GraphData graphDataLSP, graphDataDV, graphDataBF;
+			GraphData graphData = null;
 			do
 			{
 				Console.Write("Tipologia esercizio da risolvere\n1 - Link State Protocol\n2 - Distance Vector\n3 - Bellman-Ford\n0 - Esci\n\nScelta: ");
@@ -55,10 +56,10 @@ namespace Risolutore
 						link = "https://www.embedware.it/sistemi/grafi/LSP/";
 						codiceGrafo = null;
 						generateNew = true;
-						jsLSP = OpenLink(link, codiceGrafo, LSP, generateNew);
-						graphDataLSP = DeserializeGraphData(jsLSP);
-						//OutputGraphData(graphDataLSP);
-						LinkStateProtocol(graphDataLSP);
+						js = OpenLink(link, codiceGrafo, LSP, generateNew);
+						graphData = DeserializeGraphData(js);
+						//OutputGraphData(graphData);
+						LinkStateProtocol(graphData);
 						break;
 					case "2":
 						link = "https://www.embedware.it/sistemi/grafi/DV/";
@@ -66,19 +67,34 @@ namespace Risolutore
 						{
 							Console.Write("Generare un nuovo grafo? (s/n): ");
 							string input = Console.ReadLine().ToLower();
-							if(input == "s")
+							if (input == "s")
+							{
 								generateNew = true;
-							else if(input == "n")
+								codiceGrafo = null;
+								js = OpenLink(link, codiceGrafo, LSP, generateNew);
+								graphData = DeserializeGraphData(js);
+								//OutputGraphData(graphData);
+								DistanceVector(graphData);
+							}
+							else if (input == "n")
+							{
 								generateNew = false;
+								Console.Write("Inserisci codice grafo: ");
+								codiceGrafo = Console.ReadLine();
+								js = OpenLink(link, codiceGrafo, LSP, generateNew);
+								graphData = DeserializeGraphData(js);
+								//OutputGraphData(graphData);
+								DistanceVector(graphData);
+							}
 							else
+							{
 								generateNew = null;
+								Console.Write("Scelta non valida. Premere un tasto per continuare . . .");
+								Console.ReadKey();
+								Console.Clear();
+								Console.Write("Tipologia esercizio da risolvere\n1 - Link State Protocol\n2 - Distance Vector\n3 - Bellman-Ford\n0 - Esci\n\nScelta: 2\n");
+							}
 						} while (generateNew == null);
-						Console.Write("Inserisci codice grafo: ");
-						codiceGrafo = Console.ReadLine();
-						jsDV = OpenLink(link, codiceGrafo, LSP, generateNew);
-						graphDataDV = DeserializeGraphData(jsDV);
-						//OutputGraphData(graphDataDV);
-						DistanceVector(graphDataDV);
 						break;
 					case "3":
 						link = "https://www.embedware.it/sistemi/grafi/bellman/";
@@ -90,25 +106,30 @@ namespace Risolutore
 							{
 								generateNew = true;
 								codiceGrafo = null;
-								jsBF = OpenLink(link, codiceGrafo, LSP, generateNew);
-								graphDataBF = DeserializeGraphData(jsBF);
-								//OutputGraphData(graphDataBF);
-								BellmanFord(graphDataBF);
+								js = OpenLink(link, codiceGrafo, LSP, generateNew);
+								graphData = DeserializeGraphData(js);
+								//OutputGraphData(graphData);
+								BellmanFord(graphData);
 							}
 							else if (input == "n")
 							{
 								generateNew = false;
 								Console.Write("Inserisci codice grafo: ");
 								codiceGrafo = Console.ReadLine();
-								jsBF = OpenLink(link, codiceGrafo, LSP, generateNew);
-								graphDataBF = DeserializeGraphData(jsBF);
-								//OutputGraphData(graphDataBF);
-								BellmanFord(graphDataBF);
+								js = OpenLink(link, codiceGrafo, LSP, generateNew);
+								graphData = DeserializeGraphData(js);
+								//OutputGraphData(graphData);
+								BellmanFord(graphData);
 							}
 							else
+							{
 								generateNew = null;
+								Console.Write("Scelta non valida. Premere un tasto per continuare . . .");
+								Console.ReadKey();
+								Console.Clear();
+								Console.Write("Tipologia esercizio da risolvere\n1 - Link State Protocol\n2 - Distance Vector\n3 - Bellman-Ford\n0 - Esci\n\nScelta: 3\n");
+							}
 						} while (generateNew == null);
-						
 						break;
 					case "0":
 						Environment.Exit(0);
@@ -126,26 +147,49 @@ namespace Risolutore
 		static string OpenLink(string l, string cG, bool isLSP, bool? newGraph)
 		{
 			var driver = new OpenQA.Selenium.Edge.EdgeDriver();
-			IWebElement scriptElement;
-			driver.Navigate().GoToUrl(l);
-			if (!isLSP)
+			try
 			{
-				// inserire codice grafo nella textbox
-				driver.FindElement(By.Name("codice")).SendKeys(cG);
-				// cliccare sul pulsante "Genera"
-				driver.FindElement(By.CssSelector("input[type='submit'][value='genera']")).Click();
+				IWebElement scriptElement;
+				driver.Navigate().GoToUrl(l);
+
+				if (!isLSP && newGraph == false)
+				{
+					// inserire codice grafo nella textbox
+					driver.FindElement(By.Name("codice")).SendKeys(cG);
+					// cliccare sul pulsante "Genera"
+					driver.FindElement(By.CssSelector("input[type='submit'][value='genera']")).Click();
+					Console.Clear();
+					// attesa caricamento pagina
+					WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+					wait.Until(d => d.FindElements(By.TagName("script")).Count > 1);
+					// recuperare il contenuto del javascript della pagina
+					scriptElement = driver.FindElements(By.TagName("script"))[2];
+					string scriptText = scriptElement.GetAttribute("innerHTML");
+					driver.Quit(); // chiudi il browser
+					return scriptText;
+				}
+				else
+				{
+					if (!isLSP && newGraph == true)
+					{
+						// cliccare sul pulsante "Genera"
+						driver.FindElement(By.CssSelector("input[type='submit'][value='genera']")).Click();
+					}
+					Console.Clear();
+					// attesa caricamento pagina
+					WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+					wait.Until(d => d.FindElements(By.TagName("script")).Count > 1);
+					// recuperare il contenuto del javascript della pagina
+					scriptElement = isLSP ? driver.FindElements(By.TagName("script"))[1] : driver.FindElements(By.TagName("script"))[2];
+					string scriptText = scriptElement.GetAttribute("innerHTML");
+					return scriptText;
+				}
 			}
-			if(newGraph == true)
-				// cliccare sul pulsante "Genera"
-				driver.FindElement(By.CssSelector("input[type='submit'][value='genera']")).Click();
-			Console.Clear();
-			// attesa caricamento pagina
-			WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-			wait.Until(driver => driver.FindElements(By.TagName("script")).Count > 1);
-			// recuperare il contenuto del javascript della pagina
-			scriptElement = isLSP ? driver.FindElements(By.TagName("script"))[1] : driver.FindElements(By.TagName("script"))[2];
-			string scriptText = scriptElement.GetAttribute("innerHTML");
-			return scriptText;
+			catch (Exception ex)
+			{
+				driver.Quit(); // chiudere il browser in caso di errore
+				throw new Exception($"Si è verricato un errore: {ex.Message}");
+			}
 		}
 
 		static GraphData DeserializeGraphData(string script)

@@ -45,7 +45,7 @@ namespace Risolutore
 			string link, codiceGrafo, js;
 			bool LSP = false;
 			bool? generateNew;
-			GraphData graphData = null;
+			GraphData graphData;
 			do
 			{
 				Console.Write("Tipologia esercizio da risolvere\n1 - Link State Protocol\n2 - Distance Vector\n3 - Bellman-Ford\n0 - Esci\n\nScelta: ");
@@ -56,10 +56,12 @@ namespace Risolutore
 						link = "https://www.embedware.it/sistemi/grafi/LSP/";
 						codiceGrafo = null;
 						generateNew = true;
-						js = OpenLink(link, codiceGrafo, LSP, generateNew);
+						js = OpenLink(link, codiceGrafo, LSP, generateNew, out IWebDriver driverLSP);
 						graphData = DeserializeGraphData(js);
 						//OutputGraphData(graphData);
 						LinkStateProtocol(graphData);
+						Console.ReadKey();
+						driverLSP.Quit();
 						break;
 					case "2":
 						link = "https://www.embedware.it/sistemi/grafi/DV/";
@@ -71,20 +73,24 @@ namespace Risolutore
 							{
 								generateNew = true;
 								codiceGrafo = null;
-								js = OpenLink(link, codiceGrafo, LSP, generateNew);
+								js = OpenLink(link, codiceGrafo, LSP, generateNew, out IWebDriver driverDVn);
 								graphData = DeserializeGraphData(js);
 								//OutputGraphData(graphData);
 								DistanceVector(graphData);
+								Console.ReadKey();
+								driverDVn.Quit();
 							}
 							else if (input == "n")
 							{
 								generateNew = false;
 								Console.Write("Inserisci codice grafo: ");
 								codiceGrafo = Console.ReadLine();
-								js = OpenLink(link, codiceGrafo, LSP, generateNew);
+								js = OpenLink(link, codiceGrafo, LSP, generateNew, out IWebDriver driverDV);
 								graphData = DeserializeGraphData(js);
 								//OutputGraphData(graphData);
 								DistanceVector(graphData);
+								Console.ReadKey();
+								driverDV.Quit();
 							}
 							else
 							{
@@ -106,20 +112,24 @@ namespace Risolutore
 							{
 								generateNew = true;
 								codiceGrafo = null;
-								js = OpenLink(link, codiceGrafo, LSP, generateNew);
+								js = OpenLink(link, codiceGrafo, LSP, generateNew, out IWebDriver driverBFn);
 								graphData = DeserializeGraphData(js);
 								//OutputGraphData(graphData);
 								BellmanFord(graphData);
+								Console.ReadKey();
+								driverBFn.Quit();
 							}
 							else if (input == "n")
 							{
 								generateNew = false;
 								Console.Write("Inserisci codice grafo: ");
 								codiceGrafo = Console.ReadLine();
-								js = OpenLink(link, codiceGrafo, LSP, generateNew);
+								js = OpenLink(link, codiceGrafo, LSP, generateNew, out IWebDriver driverBF);
 								graphData = DeserializeGraphData(js);
 								//OutputGraphData(graphData);
 								BellmanFord(graphData);
+								Console.ReadKey();
+								driverBF.Quit();
 							}
 							else
 							{
@@ -144,9 +154,9 @@ namespace Risolutore
 			while (continua);
 		}
 
-		static string OpenLink(string l, string cG, bool isLSP, bool? newGraph)
+		static string OpenLink(string l, string cG, bool isLSP, bool? newGraph, out IWebDriver driver)
 		{
-			var driver = new OpenQA.Selenium.Edge.EdgeDriver();
+			driver = new OpenQA.Selenium.Edge.EdgeDriver();
 			try
 			{
 				IWebElement scriptElement;
@@ -340,8 +350,6 @@ namespace Risolutore
 
 				Console.WriteLine();
 			}
-
-			Console.ReadKey();
 		}
 
 		static void DistanceVector(GraphData graphData)
@@ -446,8 +454,6 @@ namespace Risolutore
 				}
 				Console.WriteLine();
 			}
-
-			Console.ReadKey();
 		}
 
 
@@ -553,8 +559,6 @@ namespace Risolutore
 					Console.WriteLine();
 				}
 			}
-
-			Console.ReadKey();
 		}
 	}
 }

@@ -152,7 +152,7 @@ namespace Risolutore
 						continua = false;
 						break;
 					default:
-						Console.WriteLine("Scelta non valida");
+						Console.Write("Scelta non valida");
 						Console.ReadKey();
 						break;
 				}
@@ -532,7 +532,7 @@ namespace Risolutore
 				}
 			}
 
-			Console.WriteLine("\nDistanze dal nodo di partenza:");
+			Console.WriteLine("Distanze dal nodo di partenza:");
 			foreach (var node in graphData.Nodes)
 			{
 				string distanceLabel = distances[node.Id] == int.MaxValue ? "∞" : distances[node.Id].ToString();

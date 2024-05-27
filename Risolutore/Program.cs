@@ -454,7 +454,7 @@ namespace Risolutore
 					}
 					else
 					{
-						string costLabel = distances[node.Id][targetNode.Id] == int.MaxValue ? "∞" : distances[node.Id][targetNode.Id].ToString();
+						string costLabel = distances[node.Id][targetNode.Id] == int.MaxValue ? "Inf" : distances[node.Id][targetNode.Id].ToString();
 						string nextHopLabel = nextHops[node.Id][targetNode.Id] == -1 ? "N/A" : graphData.Nodes.First(n => n.Id == nextHops[node.Id][targetNode.Id]).Label;
 						Console.WriteLine($"To {targetNode.Label}: Costo = {costLabel}, Next hop = {nextHopLabel}");
 					}
@@ -463,10 +463,8 @@ namespace Risolutore
 			}
 		}
 
-
 		static void BellmanFord(GraphData graphData)
 		{
-			// Create a copy of the GraphData object to work with
 			GraphData graphDataCopy = new GraphData(
 				new List<Node>(graphData.Nodes),
 				new List<Arco>(graphData.Edges)
@@ -535,7 +533,7 @@ namespace Risolutore
 			Console.WriteLine("Distanze dal nodo di partenza:");
 			foreach (var node in graphData.Nodes)
 			{
-				string distanceLabel = distances[node.Id] == int.MaxValue ? "∞" : distances[node.Id].ToString();
+				string distanceLabel = distances[node.Id] == int.MaxValue ? "Inf" : distances[node.Id].ToString();
 				Console.WriteLine($"Router {node.Label}: {distanceLabel}");
 			}
 
@@ -561,7 +559,7 @@ namespace Risolutore
 						current = predecessors[current];
 					}
 
-					string distanceLabel = distances[node.Id] == int.MaxValue ? "∞" : distances[node.Id].ToString();
+					string distanceLabel = distances[node.Id] == int.MaxValue ? "Inf" : distances[node.Id].ToString();
 					Console.WriteLine($"\n  Distanza: {distanceLabel}");
 					Console.WriteLine();
 				}

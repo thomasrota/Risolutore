@@ -62,6 +62,8 @@ namespace Risolutore
 						LinkStateProtocol(graphData);
 						Console.ReadKey();
 						driverLSP.Quit();
+						Environment.Exit(0);
+						continua = false;
 						break;
 					case "2":
 						link = "https://www.embedware.it/sistemi/grafi/DV/";
@@ -101,6 +103,8 @@ namespace Risolutore
 								Console.Write("Tipologia esercizio da risolvere\n1 - Link State Protocol\n2 - Distance Vector\n3 - Bellman-Ford\n0 - Esci\n\nScelta: 2\n");
 							}
 						} while (generateNew == null);
+						Environment.Exit(0);
+						continua = false;
 						break;
 					case "3":
 						link = "https://www.embedware.it/sistemi/grafi/bellman/";
@@ -140,6 +144,8 @@ namespace Risolutore
 								Console.Write("Tipologia esercizio da risolvere\n1 - Link State Protocol\n2 - Distance Vector\n3 - Bellman-Ford\n0 - Esci\n\nScelta: 3\n");
 							}
 						} while (generateNew == null);
+						Environment.Exit(0);
+						continua = false;
 						break;
 					case "0":
 						Environment.Exit(0);
@@ -147,6 +153,7 @@ namespace Risolutore
 						break;
 					default:
 						Console.WriteLine("Scelta non valida");
+						Console.ReadKey();
 						break;
 				}
 				Console.Clear();

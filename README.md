@@ -66,6 +66,53 @@ Tipologia esercizio da risolvere
 Scelta: 1
 ```
 
+```
+Link State Packet per il Router R1:
+  To R2: Costo = 10
+  To R3: Costo = 1
+  To R7: Costo = 1
+
+Link State Packet per il Router R2:
+  To R1: Costo = 10
+  To R3: Costo = 1
+  To R4: Costo = 7
+  To R7: Costo = 2
+
+Link State Packet per il Router R3:
+  To R1: Costo = 1
+  To R2: Costo = 1
+  To R7: Costo = 1
+
+Link State Packet per il Router R4:
+  To R2: Costo = 7
+  To R5: Costo = 8
+  To R6: Costo = 2
+  To R7: Costo = 2
+
+Link State Packet per il Router R5:
+  To R4: Costo = 8
+  To R7: Costo = 9
+
+Link State Packet per il Router R6:
+  To R4: Costo = 2
+
+Link State Packet per il Router R7:
+  To R1: Costo = 1
+  To R2: Costo = 2
+  To R3: Costo = 1
+  To R4: Costo = 2
+  To R5: Costo = 9
+
+        R1      R2      R3      R4      R5      R6      R7
+R1      0       2       1       3       10      5       1
+R2      2       0       1       4       11      6       2
+R3      1       1       0       3       10      5       1
+R4      3       4       3       0       8       2       2
+R5      10      11      10      8       0       10      9
+R6      5       6       5       2       10      0       4
+R7      1       2       1       2       9       4       0
+```
+
 ## Contribuire
 ---
 Le richieste di pull sono benvenute. Per modifiche importanti, apri prima un problema per discutere cosa vorresti cambiare.

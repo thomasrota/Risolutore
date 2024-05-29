@@ -58,10 +58,10 @@ dotnet run Risolutore.csproj
 ## Esempio di Utilizzo
 ```
 Tipologia esercizio da risolvere
-1 - Link State Protocol
-2 - Distance Vector
-3 - Bellman-Ford
-0 - Esci
+	1 - Link State Protocol
+	2 - Distance Vector
+	3 - Bellman-Ford
+	0 - Esci
 
 Scelta: 1
 ```

@@ -114,5 +114,4 @@ R7      1       2       1       2       9       4       0
 ```
 
 ## Contribuire
----
 Le richieste di pull sono benvenute. Per modifiche importanti, apri prima un problema per discutere cosa vorresti cambiare.
